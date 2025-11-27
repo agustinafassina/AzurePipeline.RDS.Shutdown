@@ -1,0 +1,16 @@
+name: $(SourceBranchName)_$(Build.SourceVersion)
+
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-24.04'
+
+steps:
+- script: |
+    aws rds stop-db-instance --db-instance-identifier $(AWS_INSTANCES_LIST)
+  displayName: 'Shutting down Instances'
+  env:
+    AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+    AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+    AWS_INSTANCES_LIST: $(AWS_INSTANCE_ID)
+    AWS_DEFAULT_REGION: $(AWS_REGION)
