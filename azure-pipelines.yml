@@ -3,14 +3,23 @@ name: $(SourceBranchName)_$(Build.SourceVersion)
 trigger: none
 
 pool:
-  vmImage: 'ubuntu-24.04'
+  vmImage: 'ubuntu-latest'
+
+variables:
+  AWS_REGION: 'us-east-1'                  # replace with the actual region
+  AWS_INSTANCE_ID: 'database-1,database-2' # comma-separated list of RDS DB instance identifiers
 
 steps:
-- script: |
-    aws rds stop-db-instance --db-instance-identifier $(AWS_INSTANCES_LIST)
-  displayName: 'Shutting down Instances'
-  env:
-    AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-    AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-    AWS_INSTANCES_LIST: $(AWS_INSTANCE_ID)
-    AWS_DEFAULT_REGION: $(AWS_REGION)
+- task: AWSShellScript@1
+  displayName: 'Shutting down RDS instances'
+  inputs:
+    awsCredentials: 'aws-dev-connection'
+    regionName: '$(AWS_REGION)'
+    scriptType: 'inline'
+    inlineScript: |
+      set -e
+      # stop-db-instance accepts a single identifier, so loop over the comma-separated list
+      for DB_ID in $(echo "$AWS_INSTANCE_ID" | tr ',' ' '); do
+        echo "Stopping RDS instance: $DB_ID"
+        aws rds stop-db-instance --db-instance-identifier "$DB_ID"
+      done
